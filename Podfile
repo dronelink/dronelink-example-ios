@@ -1,4 +1,4 @@
-platform :ios, '12.0'
+platform :ios, '13.0'
 inhibit_all_warnings!
 use_frameworks!
 
@@ -9,7 +9,7 @@ target 'DronelinkExample' do
   pod 'DronelinkDJIUI', :path => '../dronelink-dji-ui-ios'
   pod 'DronelinkParrot', :path => '../dronelink-parrot-ios'
   pod 'DronelinkParrotUI', :path => '../dronelink-parrot-ui-ios'
-  pod 'DJI-SDK-iOS', '~> 4.13'
+  pod 'DJI-SDK-iOS', '~> 4.14-trial2'
   post_install do |installer|
     installer.pods_project.targets.each do |target|
       target.build_configurations.each do |config|

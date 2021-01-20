@@ -25,6 +25,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         DronelinkParrot.telemetryProvider = TelemetryProvider.shared
+        Dronelink.shared.add(delegate: self)
         Dronelink.shared.register(environmentKey: "INSERT YOUR ENVIRONMENT KEY HERE")
         Dronelink.shared.add(droneSessionManager: DJIDroneSessionManager())
         Dronelink.shared.add(droneSessionManager: ParrotDroneSessionManager())
@@ -47,6 +48,26 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     }
 }
 
+extension AppDelegate: DronelinkDelegate {
+    func onRegistered(error: String?) {}
+    
+    func onDroneSessionManagerAdded(manager: DroneSessionManager) {
+        manager.add(delegate: self)
+    }
+    
+    func onMissionLoaded(executor: MissionExecutor) {}
+    
+    func onMissionUnloaded(executor: MissionExecutor) {}
+    
+    func onFuncLoaded(executor: FuncExecutor) {}
+    
+    func onFuncUnloaded(executor: FuncExecutor) {}
+    
+    func onModeLoaded(executor: ModeExecutor) {}
+    
+    func onModeUnloaded(executor: ModeExecutor) {}
+}
+
 extension AppDelegate: DroneSessionManagerDelegate {
     func onOpened(session: DroneSession) {
         session.add(delegate: self)
@@ -60,10 +81,6 @@ extension AppDelegate: DroneSessionManagerDelegate {
 extension AppDelegate: DroneSessionDelegate {
     func onInitialized(session: DroneSession) {
         Dronelink.shared.announce(message: "\(session.name ?? "drone") connected")
-    }
-    
-    func onDroneSessionManagerAdded(manager: DroneSessionManager) {
-        manager.add(delegate: self)
     }
 
     func onLocated(session: DroneSession) {}
