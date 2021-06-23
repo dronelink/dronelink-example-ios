@@ -14,7 +14,7 @@ import GroundSdk
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
-    private let log = OSLog(subsystem: "DronelinkExample", category: "AppDelegate")
+    private static let log = OSLog(subsystem: "DronelinkExample", category: "AppDelegate")
     
     internal static let mapCredentialsKey = "INSERT YOUR CREDENTIALS KEY HERE"
 
@@ -36,13 +36,13 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             assetIndex = assetManifest?.addAsset(key: "key", descriptors: Kernel.Descriptors(name: "name", description: "description", tags: ["tag1", "tag2"]))
         }
         catch DronelinkError.kernelInvalid {
-            os_log(.error, log: self.log, "Dronelink Kernel Invalid")
+            os_log(.error, log: AppDelegate.log, "Dronelink Kernel Invalid")
         }
         catch DronelinkError.kernelIncompatible {
-            os_log(.error, log: self.log, "Dronelink Kernel Incompatible")
+            os_log(.error, log: AppDelegate.log, "Dronelink Kernel Incompatible")
         }
         catch {
-            os_log(.error, log: self.log, "Unknown error!")
+            os_log(.error, log: AppDelegate.log, "Unknown error!")
         }
         return true
     }
@@ -53,6 +53,7 @@ extension AppDelegate: DronelinkDelegate {
     
     func onDroneSessionManagerAdded(manager: DroneSessionManager) {
         manager.add(delegate: self)
+        manager.add(delegate: TelemetryProvider.shared)
     }
     
     func onMissionLoaded(executor: MissionExecutor) {}
@@ -66,6 +67,10 @@ extension AppDelegate: DronelinkDelegate {
     func onModeLoaded(executor: ModeExecutor) {}
     
     func onModeUnloaded(executor: ModeExecutor) {}
+    
+    func onCameraFocusCalibrationRequested(value: Kernel.CameraFocusCalibration) {}
+    
+    func onCameraFocusCalibrationUpdated(value: Kernel.CameraFocusCalibration) {}
 }
 
 extension AppDelegate: DroneSessionManagerDelegate {
@@ -109,13 +114,15 @@ class TelemetryProvider: ParrotTelemetryProvider, DroneSessionManagerDelegate, Y
     func onOpened(session: DroneSession) {
         self.session = session
         if let adapter = session.drone as? ParrotDroneAdapter {
-            streamServerRef = adapter.drone.getPeripheral(Peripherals.streamServer) { streamServer in
+            streamServerRef = adapter.drone.getPeripheral(Peripherals.streamServer) { [weak self] streamServer in
                 if let streamServer = streamServer {
                     streamServer.enabled = true
-                    self.liveStreamRef = streamServer.live { liveStream in
+                    self?.liveStreamRef = streamServer.live { liveStream in
                         if let liveStream = liveStream {
                             _ = liveStream.play()
-                            _ = liveStream.openYuvSink(queue: DispatchQueue.main, listener: self)
+                            if let listener = self {
+                                _ = liveStream.openYuvSink(queue: DispatchQueue.main, listener: listener)
+                            }
                         }
                     }
                 }
